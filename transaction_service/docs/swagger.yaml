@@ -1,0 +1,42 @@
+info:
+  contact: {}
+paths:
+  /health:
+    get:
+      description: Retrieves health for document service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get health check
+      tags:
+      - health
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a file via multipart/form-data
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Optional description
+        in: formData
+        name: description
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Uploads a file
+      tags:
+      - files
+swagger: "2.0"
