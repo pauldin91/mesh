@@ -21,5 +21,8 @@
 go.work
 go.work.sum
 
+build/
+document_service
+transaction_service
 # env file
 .env
