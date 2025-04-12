@@ -13,7 +13,7 @@ paths:
             type: string
       summary: Get health check
       tags:
-      - hello
+      - health
   /upload:
     post:
       consumes:

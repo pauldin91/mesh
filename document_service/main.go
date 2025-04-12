@@ -1,7 +1,8 @@
 package main
 
 import (
-	"sync"
+	"context"
+	"time"
 
 	"github.com/pauldin91/mesh/document_service/src/api"
 )
@@ -14,15 +15,12 @@ func main() {
 
 	httpServer := s.
 		WithConfig(".").
-		WithRouter().
+		WithServer().
 		Build()
 
-	done := make(chan bool)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		httpServer.Start(done)
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
+	httpServer.Start()
+	httpServer.WaitForShutdown(ctx)
 }

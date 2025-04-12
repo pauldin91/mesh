@@ -22,7 +22,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "hello"
+                    "health"
                 ],
                 "summary": "Get health check",
                 "responses": {
