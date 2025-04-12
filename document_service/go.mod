@@ -3,12 +3,14 @@ module github.com/pauldin91/mesh/document_service
 go 1.24.0
 
 require (
+    github.com/pauldin91/common v0.0.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.20.1
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.4
 )
+replace github.com/pauldin91/common => ../common
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

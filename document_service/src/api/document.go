@@ -1,6 +1,8 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // uploadHandler handles file uploads
 // @Summary      Uploads a file
@@ -12,7 +14,7 @@ import "net/http"
 // @Param        description formData  string false "Optional description"
 // @Success      200 {string} string
 // @Router       /upload [post]
-func (app *HttpApplication) uploadHandler(w http.ResponseWriter, r *http.Request) {
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`"File uploaded"`)) // Proper JSON-encoded string
 }
