@@ -21,6 +21,8 @@
 go.work
 go.work.sum
 
+
+target/
 build/
 document_service
 transaction_service
