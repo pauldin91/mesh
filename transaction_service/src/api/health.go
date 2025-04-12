@@ -9,7 +9,7 @@ import "net/http"
 // @Produce      json
 // @Success      200 {string}  string
 // @Router       /health [get]
-func (app *HttpApplication) healthHandler(w http.ResponseWriter, r *http.Request) {
+func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
