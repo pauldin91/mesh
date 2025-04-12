@@ -10,6 +10,5 @@ import "net/http"
 // @Success      200 {string}  string
 // @Router       /health [get]
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-
 	w.WriteHeader(http.StatusOK)
 }

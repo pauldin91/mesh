@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/pauldin91/common/web"
+	_ "github.com/pauldin91/mesh/transaction_service/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
