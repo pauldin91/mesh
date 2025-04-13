@@ -1,0 +1,26 @@
+services:
+  document:
+    build:
+      context: .
+      dockerfile: ./document_service/dockerfile
+    ports:
+      - "7443:7443"
+    environment:
+      - HTTP_SERVER_ADDRESS=0.0.0.0:7443
+    networks:
+      - mesh
+    
+  transaction:
+    build:
+      context: .
+      dockerfile: ./transaction_service/dockerfile
+    ports:
+      - "8443:8443"
+    environment:
+      - HTTP_SERVER_ADDRESS=0.0.0.0:8443
+    networks:
+      - mesh
+
+networks:
+    mesh:
+      driver: bridge
