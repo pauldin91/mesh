@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: ./document_service/dockerfile
+      args:
+          SERVICE_NAME: document_service
     ports:
       - "7443:7443"
     environment:
@@ -14,6 +16,8 @@ services:
     build:
       context: .
       dockerfile: ./transaction_service/dockerfile
+      args:
+          SERVICE_NAME: transaction_service
     ports:
       - "8443:8443"
     environment:
