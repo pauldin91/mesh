@@ -1,0 +1,27 @@
+FROM golang:1.24 AS build
+
+WORKDIR /app
+
+COPY . .
+
+WORKDIR /app/transaction_service
+
+RUN go mod tidy
+    
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main ./src/main.go
+    
+FROM alpine:3.21
+    
+WORKDIR /app
+    
+COPY --from=build /app/transaction_service/main /app/transaction_service/src/
+    
+COPY ../certificates /app/certificates
+
+COPY transaction_service/docs /app/transaction_service/docs
+COPY transaction_service/app.env /app/transaction_service/app.env
+
+WORKDIR /app/transaction_service/src
+
+CMD ["./main"]
+    

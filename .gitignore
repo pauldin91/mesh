@@ -24,7 +24,6 @@ go.work.sum
 
 target/
 build/
-document_service
-transaction_service
+
 # env file
 .env

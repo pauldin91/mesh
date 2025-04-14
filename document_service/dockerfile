@@ -1,0 +1,27 @@
+FROM golang:1.24 AS build
+
+WORKDIR /app
+
+COPY . .
+
+WORKDIR /app/document_service
+
+RUN go mod tidy
+    
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main ./src/main.go
+    
+FROM alpine:3.21
+    
+WORKDIR /app
+    
+COPY --from=build /app/document_service/main /app/document_service/src/
+    
+COPY ../certificates /app/certificates
+
+COPY document_service/docs /app/document_service/docs
+COPY document_service/app.env /app/document_service/app.env
+
+WORKDIR /app/document_service/src
+
+CMD ["./main"]
+    
