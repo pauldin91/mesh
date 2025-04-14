@@ -1,26 +1,24 @@
-use dotenvy::dotenv;
+use dotenvy::from_filename;
 use http_body_util::{BodyExt, Full};
-use hyper::body::{Body,Bytes, Incoming};
+use hyper::{Request, Response};
+use hyper::body::{Bytes, Incoming};
 use hyper::server::conn::http1;
-use hyper::{Request, Response, Uri};
 use hyper_util::rt::TokioIo;
 use tokio::net::{TcpListener, TcpStream};
+use reqwest::Client;
 use std::env;
-use std::fmt::format;
-use hyper::client::conn::http1::Builder;
 use std::net::SocketAddr;
-use hyper::service::{ service_fn,};
+use hyper::service::{service_fn};
 use std::convert::Infallible;
 
 
-
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>>{
-    dotenv().ok();
-    let port = env::var("PORT").unwrap_or_else(|_|"4443".to_string()).parse::<u16>().unwrap();
-    let addr = SocketAddr::from(([127, 0, 0, 1],port ));
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    from_filename("app.env").ok();
     
-
+    let port = env::var("PORT").unwrap_or_else(|_| "3443".to_string()).parse::<u16>().unwrap();
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    
     let listener = TcpListener::bind(addr).await?;
 
     loop {
@@ -37,44 +35,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>>{
             }
         });
     }
-   
 }
 
-async fn proxy_handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
-    let remote_url = env::var("HOST_SRV_A").unwrap(); 
-    let base_uri: Uri = remote_url.parse().expect("HOST_SRV_A must be a valid URI");
+pub async fn proxy_handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+    let remote_url = env::var("HOST_SRV_A").expect("HOST_SRV_A must be set");
+    let full_url = format!(
+        "{}{}",
+        remote_url,
+        req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("/")
+    );
 
-    let path_and_query = req.uri().path_and_query().map(|pq| pq.as_str()).unwrap_or("/");
-    let full_uri = format!("{}{}", base_uri, path_and_query);
+    let method = req.method().clone();
+    let headers = req.headers().clone();
 
-    let authority = base_uri.authority().unwrap().to_string(); 
-    let stream = TcpStream::connect(authority).await.unwrap();
-    let io = TokioIo::new(stream);
+    let collected = req.into_body().collect().await.unwrap();
+    let body_bytes = collected.to_bytes();
 
-    let (mut client, conn) = Builder::new()
-        .preserve_header_case(true)
-        .title_case_headers(true)
-        .handshake(io)
-        .await
+    let client = Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
         .unwrap();
 
-    tokio::spawn(async move {
-        if let Err(err) = conn.await {
-            eprintln!("Connection error: {:?}", err);
+    let mut request_builder = client.request(method, full_url);
+    for (key, value) in headers.iter() {
+        if key != "host" { 
+            request_builder = request_builder.header(key, value);
         }
-    });
+    }
 
-    let (parts, body) = req.into_parts();
-    let proxied_request = Request::from_parts(parts, body);
-    let proxied_request = proxied_request.map(|b| b.boxed());
+    let response = request_builder.body(body_bytes).send().await.unwrap();
 
-    let response = client.send_request(proxied_request).await.unwrap();
+    let status = response.status();
+    let response_headers = response.headers().clone();
+    let body = response.bytes().await.unwrap();
 
-    let (parts, body) = response.into_parts();
-    let body_bytes = body.collect().await.unwrap().to_bytes();
-    let full_response = Response::from_parts(parts, Full::new(body_bytes));
+    let mut builder = Response::builder().status(status);
+    for (key, value) in response_headers.iter() {
+        builder = builder.header(key, value);
+    }
 
-    Ok(full_response)
+    Ok(builder.body(Full::new(Bytes::from(body))).unwrap())
 }
-
-
