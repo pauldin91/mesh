@@ -1,0 +1,3 @@
+services:
+  document_service: "https://localhost:7443"
+  transaction_service: "https://localhost:8443"

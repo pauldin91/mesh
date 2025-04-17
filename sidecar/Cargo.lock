@@ -1325,6 +1325,7 @@ dependencies = [
  "once_cell",
  "regex",
  "reqwest",
+ "serde",
  "tokio",
 ]
 

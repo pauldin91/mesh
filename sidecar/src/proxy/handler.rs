@@ -1,39 +1,53 @@
-use hyper::body::{Bytes, Incoming};
-use hyper::{Request, Response, StatusCode};
+use crate::utils::{self, ServiceConfig};
+use config::Config;
 use http_body_util::{BodyExt, Full};
-use once_cell::sync::Lazy;
+use hyper::body::{Bytes, Incoming};
+use hyper::service::Service;
+use hyper::{Request, Response, StatusCode};
+use once_cell::sync::OnceCell;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::convert::Infallible;
+use std::sync::Arc; 
 
-static SERVICE_ROUTES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
-    HashMap::from([
-        ("document_service", "https://localhost:7443"),
-        ("transaction_service", "https://localhost:8443"),
-    ])
-});
 
+
+static SETTINGS: OnceCell<HashMap<String,String>> = OnceCell::new();
 pub struct Handler;
 
 impl Handler {
+    pub fn new(cfg_path: &str)-> Self{
+        let cfg = ServiceConfig::load_from_file(cfg_path);
+        SETTINGS.set(cfg.get_settings()).ok();
+        Self
+    }
     pub async fn proxy_handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
         let method = req.method().clone();
         let headers = req.headers().clone();
         let uri_path = req.uri().path();
 
-        let service_key = uri_path.trim_start_matches('/').split('/').next().unwrap_or("");
+        let service_key = uri_path
+            .trim_start_matches('/')
+            .split('/')
+            .next()
+            .unwrap_or("");
 
-        let base_url = match SERVICE_ROUTES.get(service_key) {
+        let base_url = match SETTINGS.get().unwrap().get(service_key) {
             Some(url) => url.trim_end_matches('/'),
             None => {
                 return Ok(Response::builder()
                     .status(StatusCode::NOT_FOUND)
-                    .body(Full::new(Bytes::from(format!("Unknown service: {}", service_key))))
+                    .body(Full::new(Bytes::from(format!(
+                        "Unknown service: {}",
+                        service_key
+                    ))))
                     .unwrap());
             }
         };
 
-        let path_to_forward = uri_path.strip_prefix(&format!("/{}", service_key)).unwrap_or("");
+        let path_to_forward = uri_path
+            .strip_prefix(&format!("/{}", service_key))
+            .unwrap_or("");
         let forward_path = if path_to_forward.is_empty() {
             "/"
         } else {
@@ -71,7 +85,10 @@ impl Handler {
             Err(e) => {
                 return Ok(Response::builder()
                     .status(StatusCode::BAD_GATEWAY)
-                    .body(Full::new(Bytes::from(format!("Upstream request failed: {}", e))))
+                    .body(Full::new(Bytes::from(format!(
+                        "Upstream request failed: {}",
+                        e
+                    ))))
                     .unwrap());
             }
         };

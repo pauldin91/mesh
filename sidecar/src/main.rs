@@ -4,10 +4,10 @@ use hyper_util::rt::TokioIo;
 use std::env;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
-
 use proxy::Handler;
 
 mod proxy;
+mod utils;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let listener = TcpListener::bind(addr).await?;
 
-    let handler = Handler::proxy_handler;
+    _ = Handler::new("config.yml");
 
     loop {
         let (stream, _) = listener.accept().await?;
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(handler))
+                .serve_connection(io, service_fn(Handler::proxy_handler))
                 .await
             {
                 eprintln!("Error serving connection: {:?}", err);
@@ -39,4 +39,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         });
     }
 }
-
