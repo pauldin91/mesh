@@ -1,3 +1,2 @@
-pub mod service_config; // make the submodule available
-
-pub use service_config::*; // re-export contents so `utils::foo` works
+pub use service_config::*; 
+mod service_config;

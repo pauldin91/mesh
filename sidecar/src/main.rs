@@ -1,8 +1,11 @@
+use hyper::body::Incoming;
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
+use hyper::Request;
 use hyper_util::rt::TokioIo;
 use std::env;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::net::TcpListener;
 use proxy::Handler;
 
@@ -22,16 +25,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let listener = TcpListener::bind(addr).await?;
 
-    _ = Handler::new("config.yml");
+    let handler = Arc::new(Handler::new("config.yml"));
 
     loop {
         let (stream, _) = listener.accept().await?;
 
         let io = TokioIo::new(stream);
 
+        let handler_clone = Arc::clone(&handler); 
+
         tokio::task::spawn(async move {
+            let service = service_fn(move |req: Request<Incoming>| {
+                let handler = Arc::clone(&handler_clone);
+                async move { handler.proxy_handler(req).await }
+            });
+        
             if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(Handler::proxy_handler))
+                .serve_connection(io, service)
                 .await
             {
                 eprintln!("Error serving connection: {:?}", err);

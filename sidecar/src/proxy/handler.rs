@@ -1,27 +1,32 @@
 use crate::utils::{self, ServiceConfig};
-use config::Config;
 use http_body_util::{BodyExt, Full};
 use hyper::body::{Bytes, Incoming};
-use hyper::service::Service;
 use hyper::{Request, Response, StatusCode};
-use once_cell::sync::OnceCell;
 use reqwest::Client;
-use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::Arc; 
 
+#[derive(Clone)]
+pub struct Handler{
+    config : Arc<ServiceConfig>,
+    client: Client
+}
 
-
-static SETTINGS: OnceCell<HashMap<String,String>> = OnceCell::new();
-pub struct Handler;
 
 impl Handler {
+
     pub fn new(cfg_path: &str)-> Self{
-        let cfg = ServiceConfig::load_from_file(cfg_path);
-        SETTINGS.set(cfg.get_settings()).ok();
-        Self
+        let cfg = Arc::new(ServiceConfig::load_from_file(cfg_path));
+        
+        let client = Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .unwrap();
+
+        Self{config:cfg,client}
     }
-    pub async fn proxy_handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+
+    pub async fn proxy_handler(&self,req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
         let method = req.method().clone();
         let headers = req.headers().clone();
         let uri_path = req.uri().path();
@@ -32,7 +37,7 @@ impl Handler {
             .next()
             .unwrap_or("");
 
-        let base_url = match SETTINGS.get().unwrap().get(service_key) {
+        let base_url = match self.config.services.get(service_key) {
             Some(url) => url.trim_end_matches('/'),
             None => {
                 return Ok(Response::builder()
@@ -68,12 +73,8 @@ impl Handler {
 
         let body_bytes = collected.to_bytes();
 
-        let client = Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()
-            .unwrap();
 
-        let mut request_builder = client.request(method, full_url);
+        let mut request_builder = self.client.request(method, full_url);
         for (key, value) in headers.iter() {
             if key != "host" {
                 request_builder = request_builder.header(key, value);

@@ -20,7 +20,5 @@ impl ServiceConfig {
             .unwrap()
     }
 
-    pub fn get_settings(&self) -> HashMap<String,String>{
-        self.services.clone()
-    }
+    
 }
