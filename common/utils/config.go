@@ -7,10 +7,7 @@ type Config struct {
 	CertFile          string `mapstructure:"CERTIFICATE_FILE"`
 	CertKey           string `mapstructure:"CERTIFICATE_KEY"`
 	HttpServerAddress string `mapstructure:"HTTP_SERVER_ADDRESS"`
-	WsReadLimit       int64  `mapstructure:"READ_LIMIT"`
-	WsWriteLimit      int64  `mapstructure:"WRITE_LIMIT"`
-	WsServerAddress   string `mapstructure:"WS_SERVER_ADDRESS"`
-	Peers             string `mapstructure:"PEERS"`
+	Tls               bool   `mapstructure:"TLS"`
 }
 
 func LoadConfig(path string) (Config, error) {

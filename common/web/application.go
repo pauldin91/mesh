@@ -54,8 +54,15 @@ func (app *HttpApplication) Start() {
 
 	go func() {
 		log.Info().Msgf("INFO: HTTP server started on %s\n", app.cfg.HttpServerAddress)
-		if err := app.server.ListenAndServeTLS(certFile, certKey); err != nil && err != http.ErrServerClosed {
-			log.Fatal().Msgf("Could not start HTTP server: %s", err)
+		if app.cfg.Tls {
+
+			if err := app.server.ListenAndServeTLS(certFile, certKey); err != nil && err != http.ErrServerClosed {
+				log.Fatal().Msgf("Could not start HTTP server: %s", err)
+			}
+		} else {
+			if err := app.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatal().Msgf("Could not start HTTP server: %s", err)
+			}
 		}
 	}()
 

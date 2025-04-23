@@ -14,4 +14,5 @@ config = "0.15.11"
 regex = "1.11.1"
 once_cell = "1.21.3"
 serde = "1.0.219"
+hyper-rustls = "0.27.5"
 
