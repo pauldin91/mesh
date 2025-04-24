@@ -28,40 +28,30 @@ impl Handler {
         let headers = req.headers().clone();
         let uri_path = req.uri().path();
 
-        // Check for Swagger paths, make sure it's properly forwarded
-        let is_swagger_request = uri_path.starts_with("/swagger");
 
-        // For swagger paths, strip the leading "/swagger" and forward
-        let service_key = if is_swagger_request {
-            "swagger"
-        } else {
-            uri_path
-                .trim_start_matches('/')
-                .split('/')
-                .next()
-                .unwrap_or("")
-        };
+        let service_key = uri_path
+            .trim_start_matches('/')
+            .split('/')
+            .next()
+            .unwrap_or("");
 
-        let base_url = match self.config.services.get(service_key) {
-            Some(url) => url.trim_end_matches('/'),
-            None => {
-                return Ok(Response::builder()
-                    .status(StatusCode::NOT_FOUND)
-                    .body(Full::new(Bytes::from(format!(
-                        "Unknown service: {}",
-                        service_key
-                    ))))
-                    .unwrap());
-            }
-        };
+            let base_url = match self.config.services.get(service_key) {
+                Some(url) => url.trim_end_matches('/'),
+                None => {
+                    return Ok(Response::builder()
+                        .status(StatusCode::NOT_FOUND)
+                        .body(Full::new(Bytes::from(format!(
+                            "Unknown service: {}",
+                            service_key
+                        ))))
+                        .unwrap());
+                }
+            };
 
-        // For Swagger, remove "/swagger" prefix to forward requests correctly
-        let path_to_forward = if is_swagger_request {
-            uri_path.strip_prefix("/swagger").unwrap_or("")
-        } else {
-            &uri_path.replacen(&format!("/{}", service_key), "", 1)
-        };
-
+        let path_to_forward = uri_path
+            .strip_prefix(&format!("/{}", service_key))
+            .unwrap_or("");
+        
         let forward_path = if path_to_forward.is_empty() {
             "/"
         } else {
@@ -175,7 +165,7 @@ impl Handler {
         for (key, value) in resp_headers.iter() {
             builder = builder.header(key, value);
         }
-
-        Ok(builder.body(Full::new(body_bytes)).unwrap())
+        let resp = builder.body(Full::new(body_bytes));
+        Ok(resp.unwrap())
     }
 }
