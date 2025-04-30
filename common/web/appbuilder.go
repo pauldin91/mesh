@@ -1,11 +1,5 @@
 package web
 
-import (
-	"log"
-
-	"github.com/pauldin91/common/utils"
-)
-
 type AppBuilder[T Application] struct {
 	app T
 }
@@ -16,17 +10,8 @@ func NewBuilder[T Application](new func() T) AppBuilder[T] {
 	}
 }
 
-func (builder *AppBuilder[T]) WithServer(routes Routes) *AppBuilder[T] {
-	builder.app.SetServer(routes)
-	return builder
-}
-
-func (builder *AppBuilder[T]) WithConfig(path string) *AppBuilder[T] {
-	cfg, err := utils.LoadConfig(path)
-	if err != nil {
-		log.Fatal("unable to load config")
-	}
-	builder.app.SetCfg(cfg)
+func (builder *AppBuilder[T]) WithServer(serverAddress string, routes Routes) *AppBuilder[T] {
+	builder.app.SetServer(serverAddress, routes)
 	return builder
 }
 

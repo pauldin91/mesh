@@ -3,14 +3,11 @@ package web
 import (
 	"context"
 	"net/http"
-
-	"github.com/pauldin91/common/utils"
 )
 
 type Application interface {
 	Start()
-	SetServer(routes Routes)
-	SetCfg(cfg utils.Config)
+	SetServer(addr string, routes Routes)
 	WaitForShutdown(context.Context)
 }
 

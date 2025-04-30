@@ -5,27 +5,21 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
-
-	"github.com/pauldin91/common/utils"
 )
 
 type HttpApplication struct {
-	cfg    utils.Config
-	server *http.Server
+	cert    string
+	certKey string
+	server  *http.Server
 }
 
-func (app *HttpApplication) SetCfg(cfg utils.Config) {
-	app.cfg = cfg
-}
-
-func (app *HttpApplication) SetServer(routes Routes) {
+func (app *HttpApplication) SetServer(serverAddress string, routes Routes) {
 	app.server = &http.Server{
-		Addr:    app.cfg.HttpServerAddress,
+		Addr:    serverAddress,
 		Handler: app.setRouter(routes),
 	}
 }
@@ -43,21 +37,21 @@ func (app *HttpApplication) setRouter(routes Routes) *chi.Mux {
 
 }
 
+func (app *HttpApplication) WithCertificateAndKey(cert, certKey string) {
+	app.cert = cert
+	app.certKey = certKey
+
+}
+
 func (app *HttpApplication) Start() {
 
-	certFile := filepath.Join(app.cfg.CertPath, app.cfg.CertFile)
-	certKey := filepath.Join(app.cfg.CertPath, app.cfg.CertKey)
-
-	if _, err := os.Stat(certFile); os.IsNotExist(err) {
-		log.Fatal().Msg("unable to load certs")
-	}
-
 	go func() {
-		log.Info().Msgf("INFO: HTTP server started on %s\n", app.cfg.HttpServerAddress)
-		if app.cfg.Tls {
-
-			if err := app.server.ListenAndServeTLS(certFile, certKey); err != nil && err != http.ErrServerClosed {
-				log.Fatal().Msgf("Could not start HTTP server: %s", err)
+		log.Info().Msgf("INFO: HTTP server started on %s\n", app.server.Addr)
+		if app.cert != "" {
+			if _, err := os.Stat(app.cert); err != nil {
+				if err := app.server.ListenAndServeTLS(app.cert, app.certKey); err != nil && err != http.ErrServerClosed {
+					log.Fatal().Msgf("Could not start HTTP server: %s", err)
+				}
 			}
 		} else {
 			if err := app.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
