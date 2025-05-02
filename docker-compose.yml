@@ -1,4 +1,19 @@
 services:
+  registry:
+    build:
+      context: .
+      dockerfile: ./registry/dockerfile
+      args:
+          SERVICE_NAME: registry
+    ports:
+      - "6443:6443"
+    environment:
+      - HTTP_SERVER_ADDRESS=0.0.0.0:6443
+    networks:
+      - mesh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock 
+
   document:
     build:
       context: .

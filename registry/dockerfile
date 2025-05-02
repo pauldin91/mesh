@@ -1,0 +1,30 @@
+ARG SERVICE_NAME=document_service
+
+FROM golang:1.24 AS build
+
+ARG SERVICE_NAME
+
+WORKDIR /app
+
+COPY . .
+
+WORKDIR /app/${SERVICE_NAME}
+
+RUN go mod tidy
+    
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main ./src/main.go
+    
+FROM alpine:3.21
+
+ARG SERVICE_NAME
+    
+WORKDIR /app
+    
+COPY --from=build /app/${SERVICE_NAME}/main /app/${SERVICE_NAME}/src/
+
+COPY ${SERVICE_NAME}/app.env /app/${SERVICE_NAME}/app.env
+
+WORKDIR /app/${SERVICE_NAME}/src
+
+CMD ["./main"]
+    
